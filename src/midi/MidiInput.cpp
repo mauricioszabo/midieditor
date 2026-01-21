@@ -64,7 +64,7 @@ void MidiInput::receiveMessage(double deltatime, std::vector<unsigned char>* mes
 
     if (_thru) {
         QByteArray a;
-        for (int i = 0; i < message->size(); i++) {
+        for (size_t i = 0; i < message->size(); i++) {
             // check channel
             if (i == 0) {
                 switch (message->at(i) & 0xF0) {

@@ -66,6 +66,7 @@ public:
     QMultiMap<int, MidiEvent*>* playerData();
 
     static QString instrumentName(int prog);
+    static QString instrumentName(int channel, int prog);
     static QString controlChangeName(int control);
     int cursorTick();
     int pauseTick();

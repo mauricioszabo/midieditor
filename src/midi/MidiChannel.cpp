@@ -204,7 +204,7 @@ int MidiChannel::progAtTick(int tick)
 {
 
     // search for the last ProgChangeEvent in the channel
-    QMultiMap<int, MidiEvent*>::iterator it = _events->upperBound(tick);
+    // QMultiMap<int, MidiEvent*>::iterator it = _events->upperBound(tick);
     // FIXME - this segfaults the program, for some reason.
     // How to fix this? I have no idea...
     // if (it == _events->end()) {

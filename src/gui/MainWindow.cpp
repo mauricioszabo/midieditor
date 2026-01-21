@@ -91,6 +91,7 @@
 #include "../MidiEvent/OnEvent.h"
 #include "../MidiEvent/TextEvent.h"
 #include "../MidiEvent/TimeSignatureEvent.h"
+#include "../midi/ChordDetector.h"
 #include "../midi/Metronome.h"
 #include "../midi/MidiChannel.h"
 #include "../midi/MidiFile.h"
@@ -1621,7 +1622,7 @@ void MainWindow::updateChannelMenu()
     foreach (QAction* action, _deleteChannelMenu->actions()) {
         int channel = action->data().toInt();
         if (file) {
-            action->setText(QString::number(channel) + " " + MidiFile::instrumentName(file->channel(channel)->progAtTick(0)));
+            action->setText(QString::number(channel) + " " + MidiFile::instrumentName(channel, file->channel(channel)->progAtTick(0)));
         }
     }
 
@@ -1629,7 +1630,7 @@ void MainWindow::updateChannelMenu()
     foreach (QAction* action, _moveSelectedEventsToChannelMenu->actions()) {
         int channel = action->data().toInt();
         if (file) {
-            action->setText(QString::number(channel) + " " + MidiFile::instrumentName(file->channel(channel)->progAtTick(0)));
+            action->setText(QString::number(channel) + " " + MidiFile::instrumentName(channel, file->channel(channel)->progAtTick(0)));
         }
     }
 
@@ -1637,7 +1638,7 @@ void MainWindow::updateChannelMenu()
     foreach (QAction* action, _pasteToChannelMenu->actions()) {
         int channel = action->data().toInt();
         if (file && channel >= 0) {
-            action->setText(QString::number(channel) + " " + MidiFile::instrumentName(file->channel(channel)->progAtTick(0)));
+            action->setText(QString::number(channel) + " " + MidiFile::instrumentName(channel, file->channel(channel)->progAtTick(0)));
         }
     }
 
@@ -1645,7 +1646,7 @@ void MainWindow::updateChannelMenu()
     foreach (QAction* action, _selectAllFromChannelMenu->actions()) {
         int channel = action->data().toInt();
         if (file) {
-            action->setText(QString::number(channel) + " " + MidiFile::instrumentName(file->channel(channel)->progAtTick(0)));
+            action->setText(QString::number(channel) + " " + MidiFile::instrumentName(channel, file->channel(channel)->progAtTick(0)));
         }
     }
 
@@ -3400,10 +3401,25 @@ void MainWindow::updateStatusBar() {
     if (selectedEvents.size() == 1) {
         message = QString("%1 | %2").arg(trackStr).arg(channelStr);
     } else {
-        message = QString("%1 | %2 | %3 events selected")
-            .arg(trackStr)
-            .arg(channelStr)
-            .arg(selectedEvents.size());
+        // For multiple events, try to detect chord from notes
+        QList<int> noteValues;
+        for (MidiEvent* event : selectedEvents) {
+            NoteOnEvent* noteEvent = dynamic_cast<NoteOnEvent*>(event);
+            if (noteEvent) {
+                noteValues.append(noteEvent->note());
+            }
+        }
+
+        if (!noteValues.isEmpty()) {
+            QString chord = ChordDetector::detectChord(noteValues);
+            if (!chord.isEmpty()) {
+                message = QString("Chord: %1").arg(chord);
+            } else {
+                message = QString("Multiple notes selected");
+            }
+        } else {
+            message = QString("%1 events selected").arg(selectedEvents.size());
+        }
     }
 
     _statusBar->showMessage(message);

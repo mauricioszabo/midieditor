@@ -1,0 +1,51 @@
+version: 2.1
+
+jobs:
+  build-linux:
+    docker:
+      - image: debian:stable-backports
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Qt6 and dependencies
+          command: |
+            apt-get update
+            apt-get install -y \
+              qt6-base-dev \
+              qt6-multimedia-dev \
+              qt6-wayland-dev \
+              qt6-tools-dev \
+              libasound2-dev \
+              libfluidsynth-dev \
+              build-essential \
+              libapparmor-dev \
+              libcap-dev \
+              libqt63dcore6 \
+              libqt6core6t64 \
+              wget file
+
+      - run:
+          name: Build project
+          command: |
+            qmake6
+            make -j$(nproc)
+
+      - run:
+          name: Create AppImage
+          command: ./scripts/build-appimage.sh
+
+      - store_artifacts:
+          path: midieditor
+          destination: MidiEditor-Linux-x64-binary
+
+      - store_artifacts:
+          path: MidiEditor-Linux-x86_64.AppImage
+          destination: MidiEditor-Linux-x64-AppImage
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build-linux

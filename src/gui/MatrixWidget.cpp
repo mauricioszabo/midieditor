@@ -34,6 +34,7 @@
 #include "../protocol/Protocol.h"
 #include "../tool/EditorTool.h"
 #include "../tool/EventTool.h"
+#include "../tool/EventMoveTool.h"
 #include "../tool/Selection.h"
 #include "../tool/Tool.h"
 
@@ -627,6 +628,11 @@ void MatrixWidget::paintPianoKey(QPainter* painter, int number, int x, int y,
 {
     int borderRight = 10;
     width = width - borderRight;
+
+    EventMoveTool* moveTool = nullptr;
+    if (Tool::currentTool()) moveTool = dynamic_cast<EventMoveTool*>(Tool::currentTool());
+    bool selectedAndCanMove = moveTool && moveTool->isDragging() && moveTool->canMoveUpDown();
+
     if (number >= 0 && number <= 127) {
 
         double scaleHeightBlack = 0.5;
@@ -723,10 +729,56 @@ void MatrixWidget::paintPianoKey(QPainter* painter, int number, int x, int y,
         }
 
         bool selected = mouseY >= y && mouseY <= y + height && mouseX > lineNameWidth && mouseOver;
-        foreach (MidiEvent* event, Selection::instance()->selectedEvents()) {
-            if (event->line() == 127 - number) {
-                selected = true;
-                break;
+        QColor selectionColor;
+        bool isDraggedDestination = false;
+
+        // Check if any dragged notes will land on this key
+        int nLines = 0;
+        if (Tool::currentTool()) {
+            if (selectedAndCanMove) {
+                int shiftY = moveTool->getStartY() - moveTool->getMouseY();
+                nLines = qAbs(shiftY) / lineHeight();
+                if (shiftY < 0) {
+                    nLines = -nLines;
+                }
+
+                foreach (MidiEvent* event, Selection::instance()->selectedEvents()) {
+                    NoteOnEvent* noteEvent = dynamic_cast<NoteOnEvent*>(event);
+                    if (noteEvent) {
+                        int newNote = noteEvent->note() + nLines;
+                        if (newNote >= 0 && newNote <= 127 && newNote == number) {
+                            selected = true;
+                            isDraggedDestination = true;
+                            // Get the color from the event's track or channel
+                            if (event->track() && !_colorsByChannels) {
+                                selectionColor = *event->track()->color();
+                            } else if (event->channel() >= 0 && event->channel() < 16 && file) {
+                                selectionColor = *file->channel(event->channel())->color();
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check if this key has the original position of selected notes
+        if (!isDraggedDestination) {
+            foreach (MidiEvent* event, Selection::instance()->selectedEvents()) {
+                if (event->line() == 127 - number) {
+                    selected = true;
+                    // Get the color from the event's track or channel
+                    if (event->track() && !_colorsByChannels) {
+                        selectionColor = *event->track()->color();
+                    } else if (event->channel() >= 0 && event->channel() < 16 && file) {
+                        selectionColor = *file->channel(event->channel())->color();
+                    }
+                    // Make it lighter if we're dragging
+                    if (selectedAndCanMove) {
+                        selectionColor = selectionColor.lighter(150);
+                    }
+                    break;
+                }
             }
         }
 
@@ -783,7 +835,11 @@ void MatrixWidget::paintPianoKey(QPainter* painter, int number, int x, int y,
             if (inRect) {
                 painter->setBrush(Qt::lightGray);
             } else if (selected) {
-                painter->setBrush(Qt::darkGray);
+                if (selectionColor.isValid()) {
+                    painter->setBrush(selectionColor);
+                } else {
+                    painter->setBrush(Qt::darkGray);
+                }
             } else {
                 painter->setBrush(Qt::black);
             }
@@ -791,7 +847,11 @@ void MatrixWidget::paintPianoKey(QPainter* painter, int number, int x, int y,
             if (inRect) {
                 painter->setBrush(Qt::darkGray);
             } else if (selected) {
-                painter->setBrush(Qt::lightGray);
+                if (selectionColor.isValid()) {
+                    painter->setBrush(selectionColor);
+                } else {
+                    painter->setBrush(Qt::lightGray);
+                }
             } else {
                 painter->setBrush(Qt::white);
             }
@@ -1473,7 +1533,6 @@ NoteOnEvent* MatrixWidget::findPreviousNoteInTrack(NoteOnEvent* note)
 
     MidiTrack* track = note->track();
     int currentTick = note->midiTime();
-    NoteOnEvent* prevNote = nullptr;
 
     for (int channel = 0; channel < 16; channel++) {
         QMultiMap<int, MidiEvent*>* map = file->channelEvents(channel);

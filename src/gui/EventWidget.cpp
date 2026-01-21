@@ -886,6 +886,9 @@ QList<QPair<QString, EventWidget::EditorField> > EventWidget::getFields()
         fields.append(QPair<QString, EditorField>("Data", MidiEventData));
         break;
     }
+    case MidiEventType:
+    default:
+        break;
     }
     fields.append(QPair<QString, EditorField>("Track", MidiEventTrack));
     return fields;
@@ -1091,20 +1094,22 @@ QVariant EventWidget::fieldContent(EditorField field)
     }
     case ProgramChangeProgram: {
         int program = -1;
+        int channel = -1;
         foreach (MidiEvent* event, _events) {
             ProgChangeEvent* ev = dynamic_cast<ProgChangeEvent*>(event);
             if (ev) {
                 if (program == -1) {
                     program = ev->program();
+                    channel = ev->channel();
                 } else if (program != ev->program()) {
                     return QVariant("");
                 }
             }
         }
-        if (program < 0) {
+        if (program < 0 || channel < 0) {
             return QVariant("");
         }
-        return QVariant(QString::number(program) + ": " + MidiFile::instrumentName(program));
+        return QVariant(QString::number(program) + ": " + MidiFile::instrumentName(channel, program));
     }
     case KeySignatureKey: {
         int key = -1;

@@ -305,7 +305,7 @@ MidiEvent* MidiEvent::loadMidiEvent(QDataStream* content, bool* ok,
                     wchar_t str[128] = L"";
                     for (int i = 0; i < length; i++) {
                         (*content) >> tempByte;
-                        wchar_t temp[2] = { btowc(tempByte) };
+                        wchar_t temp[2] = { static_cast<wchar_t>(btowc(tempByte)) };
                         wcsncat(str, temp, 1);
                     }
                     textEvent->setText(QString::fromWCharArray(str));

@@ -1074,6 +1074,16 @@ QString MidiFile::instrumentName(int prog)
     return "out of range";
 }
 
+QString MidiFile::instrumentName(int channel, int prog)
+{
+    // MIDI channel 9 (0-indexed) is always percussion/drums
+    if (channel == 9) {
+        return "Percussion";
+    }
+    // For all other channels, use the regular instrument name
+    return instrumentName(prog);
+}
+
 QString MidiFile::controlChangeName(int control)
 {
 
@@ -1770,7 +1780,7 @@ void MidiFile::meterAt(int tick, int* num, int* denum, TimeSignatureEvent **last
 void MidiFile::printLog(QStringList* log)
 {
     foreach (QString str, *log) {
-        qWarning(str.toUtf8().constData());
+        qWarning("%s", str.toUtf8().constData());
     }
 }
 

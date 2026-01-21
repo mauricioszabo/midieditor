@@ -1,0 +1,125 @@
+name: Build MidiEditor
+
+on:
+  push:
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: Build on Linux
+    runs-on: ubuntu-latest
+    container:
+      image: debian:stable-backports
+      options: --privileged
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Qt6 and dependencies
+      run: |
+        apt-get update
+        apt-get install -y \
+          qt6-base-dev \
+          qt6-multimedia-dev \
+          qt6-wayland-dev \
+          qt6-tools-dev \
+          libasound2-dev \
+          libfluidsynth-dev \
+          build-essential \
+          libapparmor-dev \
+          libcap-dev \
+          libqt63dcore6 \
+          libqt6core6t64 \
+          patchelf \
+          wget file \
+          curl
+
+    - name: Install Babashka
+      run: |
+        curl -sL https://raw.githubusercontent.com/babashka/babashka/master/install | bash
+
+    - name: Build project
+      run: |
+        qmake6
+        make -j$(nproc)
+
+    - name: Create AppImage
+      run: bb scripts/build-appimage.bb
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: MidiEditor-Linux-x64-binary
+        path: midieditor
+        retention-days: 30
+
+    - name: Upload AppImage
+      uses: actions/upload-artifact@v4
+      with:
+        name: MidiEditor-Linux-x86_64-AppImage
+        path: MidiEditor.AppImage
+        retention-days: 30
+
+  # build-windows:
+  #   name: Build on Windows
+  #   runs-on: windows-latest
+  #
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #
+  #   - name: Install Qt6
+  #     uses: jurplel/install-qt-action@v3
+  #     with:
+  #       version: '6.5.*'
+  #       modules: 'qtmultimedia'
+  #
+  #   - name: Install FluidSynth
+  #     run: |
+  #       choco install fluidsynth
+  #
+  #   - name: Build project
+  #     run: |
+  #       qmake
+  #       nmake
+  #     shell: cmd
+  #
+  #   - name: Upload Windows binary
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: MidiEditor-Windows-x64
+  #       path: bin/MidiEditor.exe
+  #       retention-days: 30
+  #
+  # build-macos:
+  #   name: Build on macOS
+  #   runs-on: macos-latest
+  #
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #
+  #   - name: Install Qt6
+  #     uses: jurplel/install-qt-action@v3
+  #     with:
+  #       version: '6.5.*'
+  #       modules: 'qtmultimedia'
+  #
+  #   - name: Install FluidSynth
+  #     run: |
+  #       brew install fluid-synth
+  #
+  #   - name: Build project
+  #     run: |
+  #       qmake
+  #       make -j$(sysctl -n hw.ncpu)
+  #
+  #   - name: Upload macOS binary
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: MidiEditor-macOS
+  #       path: MidiEditor.app
+  #       retention-days: 30

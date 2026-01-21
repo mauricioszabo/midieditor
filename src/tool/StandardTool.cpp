@@ -144,37 +144,39 @@ bool StandardTool::press(bool leftClick)
             }
 
             case SIZE_CHANGE_ACTION: {
-                if (!onSelectedEvent) {
+                if (!onSelectedEvent || QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
                     file()->protocol()->startNewAction("Selection changed", image());
                     ProtocolEntry* toCopy = copy();
                     EventTool::selectEvent(event, !Selection::instance()->selectedEvents().contains(event));
                     protocol(toCopy, this);
                     file()->protocol()->endAction();
                 }
-                Tool::setCurrentTool(sizeChangeTool);
-                sizeChangeTool->move(mouseX, mouseY);
-                sizeChangeTool->press(leftClick);
+                if (!QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+                    Tool::setCurrentTool(sizeChangeTool);
+                    sizeChangeTool->move(mouseX, mouseY);
+                    sizeChangeTool->press(leftClick);
+                }
                 return false;
             }
 
             case MOVE_ACTION: {
-                if (!onSelectedEvent) {
+                if (!onSelectedEvent || QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
                     file()->protocol()->startNewAction("Selection changed", image());
                     ProtocolEntry* toCopy = copy();
                     EventTool::selectEvent(event, !Selection::instance()->selectedEvents().contains(event));
                     protocol(toCopy, this);
                     file()->protocol()->endAction();
                 }
-					if(QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)){
-						moveTool->setDirections(true, false);
-					} else if(QApplication::keyboardModifiers().testFlag(Qt::AltModifier)){
+                if (!QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+					if(QApplication::keyboardModifiers().testFlag(Qt::AltModifier)){
 						moveTool->setDirections(false, true);
 					} else {
 						moveTool->setDirections(true, true);
 					}
-                Tool::setCurrentTool(moveTool);
-                moveTool->move(mouseX, mouseY);
-                moveTool->press(leftClick);
+                    Tool::setCurrentTool(moveTool);
+                    moveTool->move(mouseX, mouseY);
+                    moveTool->press(leftClick);
+                }
                 return false;
             }
             }

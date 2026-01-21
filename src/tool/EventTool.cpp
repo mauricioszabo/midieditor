@@ -79,7 +79,7 @@ void EventTool::selectEvent(MidiEvent* event, bool single, bool ignoreStr)
     }
     if (!selected.contains(event) && (!QApplication::keyboardModifiers().testFlag(Qt::ControlModifier) || ignoreStr)) {
         selected.append(event);
-    } else if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier) && !ignoreStr) {
+    } else if ((QApplication::keyboardModifiers().testFlag(Qt::ControlModifier) || QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) && !ignoreStr) {
         selected.removeAll(event);
     }
 

@@ -42,6 +42,11 @@ public:
 
     bool showsSelection();
 
+    bool isDragging() const { return inDrag; }
+    bool canMoveUpDown() const { return moveUpDown; }
+    int getStartY() const { return startY; }
+    int getMouseY() const { return mouseY; }
+
 protected:
     bool moveUpDown, moveLeftRight, inDrag;
     int startX, startY;

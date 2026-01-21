@@ -145,7 +145,7 @@ void ChannelListItem::instrument()
 void ChannelListItem::onBeforeUpdate()
 {
 
-    QString text = MidiFile::instrumentName(channelList->midiFile()->channel(channel)->progAtTick(channelList->midiFile()->cursorTick()));
+    QString text = MidiFile::instrumentName(channel, channelList->midiFile()->channel(channel)->progAtTick(channelList->midiFile()->cursorTick()));
     if (channel == 16) {
         text = "Events affecting all channels";
     }
